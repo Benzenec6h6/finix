@@ -4,12 +4,13 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.services.gvfs;
-in
-{
-  imports = [ modules.udisks2 ];
+in {
+  imports = [
+    #modules.udisks2
+    ../udisks2
+  ];
 
   options.services.gvfs = {
     enable = lib.mkOption {
@@ -33,10 +34,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ cfg.package ];
+    environment.systemPackages = [cfg.package];
 
-    services.dbus.packages = [ cfg.package ];
-    services.udev.packages = [ pkgs.libmtp.out ];
+    services.dbus.packages = [cfg.package];
+    services.udev.packages = [pkgs.libmtp.out];
     services.udisks2.enable = true;
 
     # needed for unwrapped applications

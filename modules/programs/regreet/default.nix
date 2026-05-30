@@ -4,10 +4,9 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.programs.regreet;
-  format = pkgs.formats.toml { };
+  format = pkgs.formats.toml {};
 
   configFile = format.generate "regreet.toml" cfg.settings;
 
@@ -35,11 +34,15 @@ let
       );
     }
   );
-in
-{
-  imports = with modules; [
-    accounts-daemon
-    greetd
+in {
+  #imports = with modules; [
+  #  accounts-daemon
+  #  greetd
+  #];
+
+  imports = [
+    ../../services/accounts-daemon
+    ../../services/greetd
   ];
 
   options.programs.regreet = {
@@ -75,7 +78,7 @@ in
 
     settings = lib.mkOption {
       type = format.type;
-      default = { };
+      default = {};
       description = ''
         `regreet` configuration. See [upstream documentation](https://github.com/rharish101/ReGreet/blob/main/regreet.sample.toml)
         for additional details.
@@ -96,7 +99,7 @@ in
 
       extraArgs = lib.mkOption {
         type = with lib.types; listOf str;
-        default = [ "-s" ];
+        default = ["-s"];
         description = ''
           Additional arguments to pass to `cage`. See [upstream documentation](https://github.com/cage-kiosk/cage/blob/master/cage.1.scd#options)
           for additional details.
@@ -105,7 +108,7 @@ in
 
       environment = lib.mkOption {
         type = with lib.types; attrsOf str;
-        default = { };
+        default = {};
         example = {
           XKB_DEFAULT_LAYOUT = "us";
           XKB_DEFAULT_VARIANT = "dvorak";
@@ -168,12 +171,12 @@ in
     providers.privileges.rules = lib.mkIf config.services.seatd.enable [
       {
         command = "/run/current-system/sw/bin/reboot";
-        users = [ "greeter" ];
+        users = ["greeter"];
         requirePassword = false;
       }
       {
         command = "/run/current-system/sw/bin/poweroff";
-        users = [ "greeter" ];
+        users = ["greeter"];
         requirePassword = false;
       }
     ];

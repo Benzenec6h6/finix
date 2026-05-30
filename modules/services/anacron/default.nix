@@ -4,16 +4,15 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.services.anacron;
-in
-{
+in {
   imports = [
     ./providers.scheduler.nix
 
     # anacron has a hard dependency on cron
-    modules.cron
+    #modules.cron
+    ../cron
   ];
 
   options.services.anacron = {
@@ -41,8 +40,8 @@ in
 
     extraArgs = lib.mkOption {
       type = with lib.types; listOf str;
-      default = [ ];
-      example = [ "-s" ];
+      default = [];
+      example = ["-s"];
       description = ''
         Additional arguments to pass to `anacron`. See {manpage}`anacron(8)`
         for additional details.
@@ -95,7 +94,7 @@ in
           };
         };
       };
-      default = { };
+      default = {};
       description = ''
         `anacrontab` configuration. See {manpage}`anacrontab(5)`
         for additional details.
@@ -104,7 +103,7 @@ in
 
     systab = lib.mkOption {
       type = with lib.types; listOf nonEmptyStr;
-      default = [ ];
+      default = [];
       description = ''
         A list of `anacron` jobs to be appended to the system-wide `anacrontab`.
       '';
