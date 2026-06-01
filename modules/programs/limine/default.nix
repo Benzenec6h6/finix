@@ -3,30 +3,38 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.programs.limine;
 
-  format = pkgs.formats.keyValue { };
+  format = pkgs.formats.keyValue {};
 
   defaultWallpaper = pkgs.nixos-artwork.wallpapers.simple-dark-gray-bootloader.gnomeFilePath;
-in
-{
+in {
   imports = [
     ./providers.bootloader.nix
   ];
 
-  options.boot.loader.efi = {
-    canTouchEfiVariables = lib.mkOption {
-      default = false;
-      type = lib.types.bool;
-      description = "Whether the installation process is allowed to modify EFI boot variables.";
-    };
+  options.boot = {
+    loader = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          efi = {
+            canTouchEfiVariables = lib.mkOption {
+              default = false;
+              type = lib.types.bool;
+              description = "Whether the installation process is allowed to modify EFI boot variables.";
+            };
 
-    efiSysMountPoint = lib.mkOption {
-      default = "/boot";
-      type = lib.types.str;
-      description = "Where the EFI System Partition is mounted.";
+            efiSysMountPoint = lib.mkOption {
+              default = "/boot";
+              type = lib.types.str;
+              description = "Where the EFI System Partition is mounted.";
+            };
+          };
+        };
+      };
+      default = {};
+      description = "Boot loader configurations.";
     };
   };
 
@@ -79,7 +87,7 @@ in
         freeformType = format.type;
         options = {
           timeout = lib.mkOption {
-            type = with lib.types; either int (enum [ "no" ]);
+            type = with lib.types; either int (enum ["no"]);
             default = 5;
             description = ''
               Specifies the timeout in seconds before the first _entry_ is automatically booted. If set
@@ -88,7 +96,7 @@ in
           };
 
           wallpaper = lib.mkOption {
-            default = [ ];
+            default = [];
             example = lib.literalExpression "[ pkgs.nixos-artwork.wallpapers.simple-dark-gray-bootloader.gnomeFilePath ]";
             type = with lib.types; listOf path;
             description = ''
@@ -131,7 +139,7 @@ in
           };
         };
       };
-      default = { };
+      default = {};
       description = ''
         `limine` configuration. See [upstream documentation](https://codeberg.org/Limine/Limine/src/branch/v${lib.versions.major cfg.package.version}.x/CONFIG.md)
         for additional details.
@@ -164,7 +172,7 @@ in
     };
 
     additionalFiles = lib.mkOption {
-      default = { };
+      default = {};
       type = lib.types.attrsOf lib.types.path;
       example = lib.literalExpression ''
         { "efi/memtest86/memtest86.efi" = "''${pkgs.memtest86-efi}/BOOTX64.efi"; }
@@ -176,38 +184,46 @@ in
       '';
     };
 
-    validateChecksums = lib.mkEnableOption null // {
-      default = true;
-      description = ''
-        Whether to validate file checksums before booting.
-      '';
-    };
+    validateChecksums =
+      lib.mkEnableOption null
+      // {
+        default = true;
+        description = ''
+          Whether to validate file checksums before booting.
+        '';
+      };
 
-    efiSupport = lib.mkEnableOption null // {
-      default = pkgs.stdenv.hostPlatform.isEfi;
-      defaultText = lib.literalExpression "pkgs.stdenv.hostPlatform.isEfi";
-      description = ''
-        Whether or not to install the limine EFI files.
-      '';
-    };
+    efiSupport =
+      lib.mkEnableOption null
+      // {
+        default = pkgs.stdenv.hostPlatform.isEfi;
+        defaultText = lib.literalExpression "pkgs.stdenv.hostPlatform.isEfi";
+        description = ''
+          Whether or not to install the limine EFI files.
+        '';
+      };
 
-    efiInstallAsRemovable = lib.mkEnableOption null // {
-      default = !config.boot.loader.efi.canTouchEfiVariables;
-      defaultText = lib.literalExpression "!config.boot.loader.efi.canTouchEfiVariables";
-      description = ''
-        Whether or not to install the limine EFI files as removable.
+    efiInstallAsRemovable =
+      lib.mkEnableOption null
+      // {
+        default = !config.boot.loader.efi.canTouchEfiVariables;
+        defaultText = lib.literalExpression "!config.boot.loader.efi.canTouchEfiVariables";
+        description = ''
+          Whether or not to install the limine EFI files as removable.
 
-        See {option}`boot.loader.grub.efiInstallAsRemovable`
-      '';
-    };
+          See {option}`boot.loader.grub.efiInstallAsRemovable`
+        '';
+      };
 
-    biosSupport = lib.mkEnableOption null // {
-      default = !cfg.efiSupport && pkgs.stdenv.hostPlatform.isx86;
-      defaultText = lib.literalExpression "!config.programs.limine.efiSupport && pkgs.stdenv.hostPlatform.isx86";
-      description = ''
-        Whether or not to install limine for BIOS.
-      '';
-    };
+    biosSupport =
+      lib.mkEnableOption null
+      // {
+        default = !cfg.efiSupport && pkgs.stdenv.hostPlatform.isx86;
+        defaultText = lib.literalExpression "!config.programs.limine.efiSupport && pkgs.stdenv.hostPlatform.isx86";
+        description = ''
+          Whether or not to install limine for BIOS.
+        '';
+      };
 
     biosDevice = lib.mkOption {
       default = "nodev";
@@ -225,45 +241,55 @@ in
       '';
     };
 
-    enrollConfig = lib.mkEnableOption null // {
-      default = cfg.settings.hash_mismatch_panic;
-      defaultText = lib.literalExpression "programs.limine.settings.hash_mismatch_panic";
-      description = ''
-        Whether or not to enroll the config.
-        Only works on EFI!
-      '';
-    };
+    enrollConfig =
+      lib.mkEnableOption null
+      // {
+        default = cfg.settings.hash_mismatch_panic;
+        defaultText = lib.literalExpression "programs.limine.settings.hash_mismatch_panic";
+        description = ''
+          Whether or not to enroll the config.
+          Only works on EFI!
+        '';
+      };
 
-    force = lib.mkEnableOption null // {
-      description = ''
-        Force installation even if the safety checks fail, use absolutely only if necessary!
-      '';
-    };
+    force =
+      lib.mkEnableOption null
+      // {
+        description = ''
+          Force installation even if the safety checks fail, use absolutely only if necessary!
+        '';
+      };
 
     secureBoot = {
-      enable = lib.mkEnableOption null // {
-        description = ''
-          Whether to sign the limine binary with {command}`sbctl`.
-
-          ::: {.note}
-          Requires pre-generated secure boot keys. See {option}`programs.limine.secureBoot.autoGenerateKeys`
-          and {option}`programs.limine.secureBoot.autoEnrollKeys` to automate key management.
-          :::
-        '';
-      };
-
-      autoGenerateKeys = lib.mkEnableOption null // {
-        description = ''
-          Generate keys automatically when none exists during bootloader installation.
-        '';
-      };
-
-      autoEnrollKeys = {
-        enable = lib.mkEnableOption null // {
+      enable =
+        lib.mkEnableOption null
+        // {
           description = ''
-            Enroll automatically generated keys.
+            Whether to sign the limine binary with {command}`sbctl`.
+
+            ::: {.note}
+            Requires pre-generated secure boot keys. See {option}`programs.limine.secureBoot.autoGenerateKeys`
+            and {option}`programs.limine.secureBoot.autoEnrollKeys` to automate key management.
+            :::
           '';
         };
+
+      autoGenerateKeys =
+        lib.mkEnableOption null
+        // {
+          description = ''
+            Generate keys automatically when none exists during bootloader installation.
+          '';
+        };
+
+      autoEnrollKeys = {
+        enable =
+          lib.mkEnableOption null
+          // {
+            description = ''
+              Enroll automatically generated keys.
+            '';
+          };
         extraArgs = lib.mkOption {
           default = [
             "--microsoft"
@@ -276,7 +302,7 @@ in
         };
       };
 
-      sbctl = lib.mkPackageOption pkgs "sbctl" { };
+      sbctl = lib.mkPackageOption pkgs "sbctl" {};
     };
   };
 
@@ -311,7 +337,7 @@ in
         graphics = true;
         verbose = lib.mkIf cfg.debug true;
 
-        wallpaper = lib.mkDefault [ defaultWallpaper ];
+        wallpaper = lib.mkDefault [defaultWallpaper];
         backdrop = lib.mkDefault "2F302F";
         wallpaper_style = lib.mkDefault "streched";
       };
